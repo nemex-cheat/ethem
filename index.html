@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ethem</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#07050f;--card:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.06);--text:#f0f0f5;--muted:#8a8a9a;--accent:#ff2d55;--accent2:#ff9500;--accent3:#af52de;--glass:blur(20px)saturate(180%)}
+html{scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* Canvas Background */
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* Navbar */
+.nav{position:fixed;top:0;left:0;width:100%;padding:0 5%;height:56px;display:flex;align-items:center;justify-content:space-between;z-index:100;background:rgba(7,5,15,0.75);backdrop-filter:var(--glass);border-bottom:1px solid var(--border);transition:all .4s cubic-bezier(.32,.72,0,1)}
+.nav-brand{font-family:'SF Pro Display',-apple-system,sans-serif;font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.5px}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;letter-spacing:0.3px;transition:color .3s cubic-bezier(.32,.72,0,1);position:relative;padding:4px 0}
+.nav-links a::after{content:'';position:absolute;bottom:0;left:50%;width:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:1px;transition:all .4s cubic-bezier(.32,.72,0,1);transform:translateX(-50%)}
+.nav-links a:hover{color:var(--text)}.nav-links a:hover::after{width:100%}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:8px}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:1px;transition:all .4s cubic-bezier(.32,.72,0,1)}
+.hamburger.active span:nth-child(1){transform:rotate(45deg)translate(5px,5px)}
+.hamburger.active span:nth-child(2){opacity:0}
+.hamburger.active span:nth-child(3){transform:rotate(-45deg)translate(5px,-5px)}
+
+/* Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;z-index:1;padding:80px 24px 40px}
+.hero-label{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:16px;opacity:0;transform:translateY(20px);animation:reveal .8s cubic-bezier(.32,.72,0,1) .2s forwards}
+.hero-title{font-family:'SF Pro Display',-apple-system,sans-serif;font-size:clamp(48px,12vw,96px);font-weight:800;letter-spacing:-2px;background:linear-gradient(135deg,var(--accent)0%,var(--accent3)50%,var(--accent2)100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;margin-bottom:20px;opacity:0;transform:translateY(30px);animation:reveal .8s cubic-bezier(.32,.72,0,1) .4s forwards}
+.hero-sub{font-size:15px;color:var(--muted);max-width:420px;margin:0 auto 32px;font-weight:400;opacity:0;transform:translateY(20px);animation:reveal .8s cubic-bezier(.32,.72,0,1) .6s forwards}
+.hero-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:linear-gradient(135deg,var(--accent),var(--accent3));color:#fff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(255,45,85,0.3);transition:all .4s cubic-bezier(.32,.72,0,1);opacity:0;transform:translateY(20px);animation:reveal .8s cubic-bezier(.32,.72,0,1) .8s forwards;position:relative;overflow:hidden}
+.hero-btn::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:left .6s}
+.hero-btn:hover{transform:translateY(-2px)scale(1.02);box-shadow:0 12px 40px rgba(255,45,85,0.4)}
+.hero-btn:hover::before{left:100%}
+.hero-btn:active{transform:scale(0.96)}
+
+/* Scroll indicator */
+.scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;animation:reveal .8s cubic-bezier(.32,.72,0,1) 1.2s forwards}
+.scroll-hint span{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.scroll-hint .mouse{width:20px;height:32px;border:2px solid var(--muted);border-radius:10px;display:flex;justify-content:center;padding-top:6px}
+.scroll-hint .wheel{width:4px;height:4px;background:var(--accent);border-radius:50%;animation:scrollWheel 2s cubic-bezier(.32,.72,0,1) infinite}
+
+@keyframes scrollWheel{0%{opacity:1;transform:translateY(0)}80%{opacity:0;transform:translateY(10px)}100%{opacity:0}}
+@keyframes reveal{to{opacity:1;transform:translateY(0)}}
+
+/* Sections */
+.section{padding:100px 24px;position:relative;z-index:1}
+.section-alt{background:linear-gradient(180deg,transparent,rgba(255,45,85,0.02),transparent)}
+.container{max-width:720px;margin:0 auto}
+.section-header{text-align:center;margin-bottom:48px}
+.section-num{display:inline-block;font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:12px;padding:4px 12px;border:1px solid rgba(255,45,85,0.2);border-radius:100px;opacity:0;transform:translateY(20px)}
+.section-num.visible{opacity:1;transform:translateY(0);transition:all .8s cubic-bezier(.32,.72,0,1)}
+.section-title{font-family:'SF Pro Display',-apple-system,sans-serif;font-size:clamp(28px,6vw,40px);font-weight:700;letter-spacing:-0.5px;color:var(--text);opacity:0;transform:translateY(20px)}
+.section-title.visible{opacity:1;transform:translateY(0);transition:all .8s cubic-bezier(.32,.72,0,1) .1s}
+
+/* Cards */
+.card{background:var(--card);backdrop-filter:var(--glass);border:1px solid var(--border);border-radius:24px;padding:40px 32px;transition:all .5s cubic-bezier(.32,.72,0,1);opacity:0;transform:translateY(40px)scale(0.98)}
+.card.visible{opacity:1;transform:translateY(0)scale(1)}
+.card:hover{border-color:rgba(255,45,85,0.15);box-shadow:0 20px60px rgba(0,0,0,0.3);transform:translateY(-4px)scale(1.01)}
+.card:active{transform:scale(0.99)}
+.card-content{font-size:15px;line-height:1.9;color:var(--text);font-weight:400}
+
+/* Letter styling */
+.letter-text p{margin-bottom:16px;text-align:justify;hyphens:auto}
+.letter-text p:last-child{margin-bottom:0}
+
+/* Poem styling */
+.poem-text p{text-align:center;margin-bottom:10px;font-family:'SF Pro Display',-apple-system,sans-serif;font-size:16px;line-height:2.2;font-weight:400;letter-spacing:0.3px}
+.poem-text .signature{margin-top:24px;font-style:italic;color:var(--accent);font-weight:500}
+
+/* Notebook styling */
+.notebook{position:relative;padding-left:48px}
+.notebook::before{content:'';position:absolute;left:24px;top:40px;bottom:40px;width:2px;background:linear-gradient(180deg,transparent,var(--accent),transparent);border-radius:1px;opacity:0.3}
+
+/* Photo */
+.photo-wrap{max-width:400px;margin:0 auto;text-align:center}
+.photo-frame{position:relative;border-radius:24px;overflow:hidden;background:var(--card);border:1px solid var(--border);backdrop-filter:var(--glass);padding:12px;transition:all .5s cubic-bezier(.32,.72,0,1);opacity:0;transform:translateY(40px)scale(0.95)}
+.photo-frame.visible{opacity:1;transform:translateY(0)scale(1)}
+.photo-frame:hover{border-color:rgba(255,45,85,0.2);box-shadow:0 24px64px rgba(0,0,0,0.4);transform:translateY(-6px)scale(1.02)}
+.photo-frame img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:16px;display:block;transition:transform .6s cubic-bezier(.32,.72,0,1)}
+.photo-frame:hover img{transform:scale(1.03)}
+.photo-caption{margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;transform:translateY(20px)}
+.photo-caption.visible{opacity:1;transform:translateY(0);transition:all .8s cubic-bezier(.32,.72,0,1) .3s}
+.caption-stars{font-size:18px;color:#ffd700;letter-spacing:12px;opacity:0.9}
+.caption-text{font-family:'SF Pro Display',-apple-system,sans-serif;font-size:22px;color:var(--accent);font-weight:600;letter-spacing:1px}
+.caption-flowers{font-size:18px;color:#ff69b4;letter-spacing:12px;opacity:0.9}
+
+/* Footer */
+.footer{padding:60px 24px;text-align:center;border-top:1px solid var(--border);position:relative;z-index:1}
+.footer-heart{font-size:32px;color:var(--accent);animation:heartbeat 1.5s cubic-bezier(.32,.72,0,1) infinite;margin-bottom:12px;display:inline-block}
+.footer p{color:var(--muted);font-size:12px;letter-spacing:3px;text-transform:uppercase}
+@keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+
+/* Touch Ripple */
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.15);transform:scale(0);animation:rippleEffect .6s cubic-bezier(.32,.72,0,1);pointer-events:none}
+@keyframes rippleEffect{to{transform:scale(4);opacity:0}}
+
+/* Mobile */
+@media(max-width:768px){
+.nav-links{display:none;position:absolute;top:56px;left:0;width:100%;background:rgba(7,5,15,0.95);backdrop-filter:var(--glass);flex-direction:column;padding:24px;gap:20px;border-bottom:1px solid var(--border);border-radius:0 0 24px 24px}
+.nav-links.active{display:flex;animation:slideDown .4s cubic-bezier(.32,.72,0,1)}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.hamburger{display:flex}
+.hero{padding:72px 20px 32px}
+.section{padding:72px 20px}
+.card{padding:28px 20px;border-radius:20px}
+.notebook{padding-left:36px}
+.notebook::before{left:16px}
+.photo-frame{padding:8px}
+.photo-frame img{border-radius:12px}
+}
+
+@media(max-width:380px){
+.hero-title{font-size:40px}
+.section-title{font-size:24px}
+.card{padding:24px 16px}
+}
+
+/* Selection */
+::selection{background:rgba(255,45,85,0.3);color:#fff}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--accent),var(--accent3));border-radius:3px}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<nav class="nav">
+<div class="nav-brand">E</div>
+<div class="nav-links" id="navLinks">
+<a href="#mektup">Mektup</a>
+<a href="#siir">Şiir</a>
+<a href="#notlar">Notlar</a>
+<a href="#defter">Defter</a>
+<a href="#fotograf">Fotoğraf</a>
+</div>
+<div class="hamburger" id="hamburger">
+<span></span><span></span><span></span>
+</div>
+</nav>
+
+<header class="hero">
+<div class="hero-label">7 Aydır Sakladığım Sır</div>
+<h1 class="hero-title">Ethem</h1>
+<p class="hero-sub">Seni öyle sessiz, öyle derinden sevdim ki...</p>
+<a href="#mektup" class="hero-btn" onclick="createRipple(event,this)">
+<span>Okumaya Başla</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+</a>
+<div class="scroll-hint">
+<span>Aşağı Kaydır</span>
+<div class="mouse"><div class="wheel"></div></div>
+</div>
+</header>
+
+<main>
+<section id="mektup" class="section">
+<div class="container">
+<div class="section-header">
+<div class="section-num">01</div>
+<h2 class="section-title">Sana</h2>
+</div>
+<div class="card">
+<div class="card-content letter-text">
+<p>Ethem beni kardesin oluyo olarak gorebilirsin ama sen nudemi sevmeden once ben seni seviyordum seni ilk sahada gormustum ilk orda asık olmustum konu hic birzaman tipin degildi bilmiyorum neden ama kalbim tutuldu birakamiyor her kimi seviyorum dedigimde aslinda o kisi sendin ve bunu hicbirzaman farketmedin suan bu mesaji okurken bana kiziyor olabilirsin evet ama ben seni canimdan herseyden herkesten cok seviyorum oldu olacak 7 aydir seviyorum seni belki istemedigin biri olabilirim ama ugruna canimi veririm eğer hayir dersen senn bilirsin kararına saygi duyuyorum</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="siir" class="section section-alt">
+<div class="container">
+<div class="section-header">
+<div class="section-num">02</div>
+<h2 class="section-title">Lebbetülayn</h2>
+</div>
+<div class="card">
+<div class="card-content poem-text">
+<p>Seni sevdigimi kimse bilmeyecek</p>
+<p>Bir anı gibi kalacaksın yüreğimde</p>
+<p>Çünkü sen aklım ile yüreğim</p>
+<p>Arasinda kalan en güzel çaresizliğimsin</p>
+<p class="signature">Lebbetülayn...</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="notlar" class="section">
+<div class="container">
+<div class="section-header">
+<div class="section-num">03</div>
+<h2 class="section-title">Notlar</h2>
+</div>
+<div class="card">
+<div class="card-content letter-text">
+<p>O notuma koydugum sarkilar o tekrar paylastigim videolar hepsi senin icindi priwime attigim hikayelerde snein icindi boklumm</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="defter" class="section section-alt">
+<div class="container">
+<div class="section-header">
+<div class="section-num">04</div>
+<h2 class="section-title">Defterimden</h2>
+</div>
+<div class="card notebook">
+<div class="card-content poem-text">
+<p>Seni öyle sessiz, öyle derinden sevdim ki...</p>
+<p>Kimse duymasın diye kalbime gömdüm bütün cümleleri.</p>
+<p>Ne gözler anlattı içimdekini,</p>
+<p>Ne de kelimeler yetişebildi kalbime.</p>
+<p>Çünkü sen, anlatıldıkça eksilenlerden değildin,</p>
+<p>Sessiz kaldıkça büyüyen bir duyguydu bende.</p>
+<p>Bir tebessümünle bahar oldum bazen,</p>
+<p>İçimde açan çiçeklerin sebebi sensin.</p>
+<p>Güneşin en güzel haliydi yüzün,</p>
+<p>Ve ben, her sabah seni düşünerek uyandım.</p>
+<p>Bir susuşunla kışı yaşadım içimde.</p>
+<p>İçime yağan karlar bile ısıtan bir yanı vardı,</p>
+<p>Çünkü sen varsın diye donmadım hiçbir zaman.</p>
+<p>Sen uzaklarda olsan da,</p>
+<p>Bir kuşun kanadında, bir şarkının sözünde,</p>
+<p>Bir rüzgarın dokunuşunda hep sen vardın.</p>
+<p>Adını anmadan binlerce kez andım seni,</p>
+<p>Seni bilmeden sevdiğim günleri bile özledim.</p>
+<p>Bazen kalabalıklar içinde yalnızlaştım,</p>
+<p>Bazen en sessiz anlarda seninle konuştum.</p>
+<p>Bir bakışın yeterdi bana dünyayı unutturmaya,</p>
+<p>Bir kelimen yeterdi yeniden ayağa kalkmaya.</p>
+<p>Ama sen, bilmedin...</p>
+<p>Belki de bilmen gerekmiyordu.</p>
+<p>Çünkü bazı sevgiler söylenince değil,</p>
+<p>söylenmeden yaşandığı için güzeldir.</p>
+<p>Ve bil ki;</p>
+<p>"Seviyorum seni..."</p>
+<p>Bir serçenin gözyaşı kadar.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="fotograf" class="section">
+<div class="container">
+<div class="section-header">
+<div class="section-num">05</div>
+<h2 class="section-title">Bir An</h2>
+</div>
+<div class="photo-wrap">
+<div class="card photo-frame" onclick="createRipple(event,this)">
+<img src="https://raw.githubusercontent.com/nemex-cheat/ethem/refs/heads/main/IMG_20260604_185413_279.jpg" alt="Ethem" loading="lazy">
+</div>
+<div class="photo-caption">
+<div class="caption-stars">✦ ✦ ✦</div>
+<div class="caption-text">boklummg</div>
+<div class="caption-flowers">❀ ❀ ❀</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+<footer class="footer">
+<div class="footer-heart">♥</div>
+<p>7 ayın özeti</p>
+</footer>
+
+<script>
+(function(){
+'use strict';
+
+// ===== CANVAS PARTICLE SYSTEM (requestAnimationFrame) =====
+const canvas=document.getElementById('bg-canvas');
+const ctx=canvas.getContext('2d');
+let particles=[];
+let w,h;
+let mouse={x:-1000,y:-1000};
+let rafId;
+
+function resize(){
+w=canvas.width=window.innerWidth;
+h=canvas.height=window.innerHeight;
+}
+resize();
+window.addEventListener('resize',resize);
+
+class Particle{
+constructor(){
+this.reset();
+}
+reset(){
+this.x=Math.random()*w;
+this.y=Math.random()*h;
+this.size=Math.random()*2+0.5;
+this.speedX=(Math.random()-0.5)*0.3;
+this.speedY=(Math.random()-0.5)*0.3;
+this.opacity=Math.random()*0.5+0.1;
+this.hue=Math.random()*60+320;
+this.life=0;
+this.maxLife=Math.random()*300+200;
+}
+update(){
+this.life++;
+if(this.life>this.maxLife){this.reset();return}
+
+// Mouse interaction
+const dx=mouse.x-this.x;
+const dy=mouse.y-this.y;
+const dist=Math.sqrt(dx*dx+dy*dy);
+if(dist<150){
+const force=(150-dist)/150;
+this.speedX-=dx*force*0.02;
+this.speedY-=dy*force*0.02;
+}
+
+this.x+=this.speedX;
+this.y+=this.speedY;
+
+// Friction
+this.speedX*=0.99;
+this.speedY*=0.99;
+
+// Wrap
+if(this.x<0)this.x=w;
+if(this.x>w)this.x=0;
+if(this.y<0)this.y=h;
+if(this.y>h)this.y=0;
+}
+draw(){
+ctx.beginPath();
+ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+ctx.fillStyle=`hsla(${this.hue},80%,70%,${this.opacity})`;
+ctx.fill();
+}
+}
+
+// Create particles
+const particleCount=Math.min(window.innerWidth<768?40:80,100);
+for(let i=0;i<particleCount;i++)particles.push(new Particle());
+
+function animate(){
+ctx.clearRect(0,0,w,h);
+particles.forEach(p=>{p.update();p.draw()});
+
+// Connect nearby particles
+for(let i=0;i<particles.length;i++){
+for(let j=i+1;j<particles.length;j++){
+const dx=particles[i].x-particles[j].x;
+const dy=particles[i].y-particles[j].y;
+const dist=Math.sqrt(dx*dx+dy*dy);
+if(dist<100){
+ctx.beginPath();
+ctx.moveTo(particles[i].x,particles[i].y);
+ctx.lineTo(particles[j].x,particles[j].y);
+ctx.strokeStyle=`hsla(340,60%,60%,${0.08*(1-dist/100)})`;
+ctx.lineWidth=0.5;
+ctx.stroke();
+}
+}
+}
+
+rafId=requestAnimationFrame(animate);
+}
+animate();
+
+document.addEventListener('mousemove',e=>{
+mouse.x=e.clientX;
+mouse.y=e.clientY;
+});
+document.addEventListener('touchmove',e=>{
+if(e.touches.length>0){
+mouse.x=e.touches[0].clientX;
+mouse.y=e.touches[0].clientY;
+}
+},{passive:true});
+
+// ===== MOBILE MENU =====
+const hamburger=document.getElementById('hamburger');
+const navLinks=document.getElementById('navLinks');
+hamburger.addEventListener('click',()=>{
+hamburger.classList.toggle('active');
+navLinks.classList.toggle('active');
+});
+document.querySelectorAll('.nav-links a').forEach(a=>{
+a.addEventListener('click',()=>{
+hamburger.classList.remove('active');
+navLinks.classList.remove('active');
+});
+});
+
+// ===== SCROLL REVEAL (IntersectionObserver) =====
+const observer=new IntersectionObserver((entries)=>{
+entries.forEach(entry=>{
+if(entry.isIntersecting){
+entry.target.classList.add('visible');
+}
+});
+},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+
+document.querySelectorAll('.section-num,.section-title,.card,.photo-frame,.photo-caption').forEach(el=>{
+observer.observe(el);
+});
+
+// ===== NAVBAR SCROLL =====
+let lastScroll=0;
+const nav=document.querySelector('.nav');
+window.addEventListener('scroll',()=>{
+const current=window.pageYOffset;
+if(current>80){
+nav.style.background='rgba(7,5,15,0.92)';
+nav.style.boxShadow='0 4px 30px rgba(0,0,0,0.3)';
+}else{
+nav.style.background='rgba(7,5,15,0.75)';
+nav.style.boxShadow='none';
+}
+lastScroll=current;
+},{passive:true});
+
+// ===== SMOOTH SCROLL =====
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+a.addEventListener('click',function(e){
+e.preventDefault();
+const target=document.querySelector(this.getAttribute('href'));
+if(target){
+target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+});
+});
+
+// ===== TOUCH RIPPLE =====
+window.createRipple=function(e,el){
+const rect=el.getBoundingClientRect();
+const ripple=document.createElement('span');
+ripple.className='ripple';
+const size=Math.max(rect.width,rect.height);
+ripple.style.width=ripple.style.height=size+'px';
+ripple.style.left=(e.clientX-rect.left-size/2)+'px';
+ripple.style.top=(e.clientY-rect.top-size/2)+'px';
+el.appendChild(ripple);
+setTimeout(()=>ripple.remove(),600);
+};
+
+// ===== PARALLAX HERO =====
+const hero=document.querySelector('.hero');
+window.addEventListener('scroll',()=>{
+const scrolled=window.pageYOffset;
+if(scrolled<window.innerHeight){
+hero.style.transform=`translateY(${scrolled*0.3}px)`;
+hero.style.opacity=1-scrolled/window.innerHeight*0.8;
+}
+},{passive:true});
+
+// ===== CARD STAGGER =====
+document.querySelectorAll('.section').forEach(section=>{
+const cards=section.querySelectorAll('.card');
+cards.forEach((card,i)=>{
+card.style.transitionDelay=(i*0.1)+'s';
+});
+});
+
+// ===== CLEANUP ON VISIBILITY CHANGE =====
+document.addEventListener('visibilitychange',()=>{
+if(document.hidden){
+cancelAnimationFrame(rafId);
+}else{
+rafId=requestAnimationFrame(animate);
+}
+});
+
+})();
+</script>
+</body>
+</html>
